@@ -133,6 +133,18 @@ html.dark [class*="text-[#77736b]"] { color: var(--muted); }
 .whatsapp-float:active { transform: scale(.97); }
 .whatsapp-ping { border: 1px solid rgba(37,211,102,.5); animation: whatsapp-pulse 2.4s ease-out infinite; }
 
+/* Admin login */
+.admin-login-shell { background: linear-gradient(145deg, var(--paper), color-mix(in srgb, var(--paper) 88%, #ed6d0b)); }
+.admin-login-grid { opacity: .32; background-image: linear-gradient(var(--line) 1px, transparent 1px), linear-gradient(90deg, var(--line) 1px, transparent 1px); background-size: 44px 44px; mask-image: radial-gradient(circle at center, black, transparent 78%); }
+.admin-login-glow { background: rgba(237,109,11,.16); filter: blur(90px); }
+.admin-login-card { position: relative; overflow: hidden; }
+.admin-login-card::before { content: ""; position: absolute; inset-inline: 0; top: 0; height: 3px; background: linear-gradient(90deg, #ff5a00, #ffad0d, transparent); }
+.admin-lock { color: var(--accent-strong); background: color-mix(in srgb, var(--accent) 13%, var(--surface)); border: 1px solid color-mix(in srgb, var(--accent) 28%, var(--line)); box-shadow: 0 12px 30px color-mix(in srgb, var(--accent) 14%, transparent); }
+.admin-notice-warning { color: #6b4a00; background: #fff7d6; border-color: #e7c45c; }
+.admin-notice-error { color: #991b1b; background: #fef2f2; border-color: #fecaca; }
+html.dark .admin-notice-warning { color: #f8d875; background: rgba(123,84,0,.24); border-color: rgba(236,180,50,.42); }
+html.dark .admin-notice-error { color: #fca5a5; background: rgba(127,29,29,.22); border-color: rgba(248,113,113,.32); }
+
 @keyframes promo-shine { 0%, 65% { left: -30%; } 90%, 100% { left: 120%; } }
 @keyframes hero-breathe { from { transform: scale(1.025); } to { transform: scale(1.065); } }
 @keyframes ticker { to { transform: translateX(calc(-50% - .875rem)); } }
