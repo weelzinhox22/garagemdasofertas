@@ -9,6 +9,7 @@ type ShareProduct = {
   store: string;
   price: number | null;
   oldPrice: number | null;
+  affiliateUrl?: string | null;
 };
 
 function currency(value: number) {
@@ -21,9 +22,12 @@ function offerText(product: ShareProduct, origin: string) {
   const discount = price !== null && oldPrice !== null && oldPrice > price
     ? Math.round(((oldPrice - price) / oldPrice) * 100)
     : null;
-  const offerUrl = new URL(`/go/${product.id}`, origin);
-  offerUrl.searchParams.set("utm_source", "other");
-  offerUrl.searchParams.set("utm_campaign", "whatsapp_group");
+
+  // Leva direto para a loja / link de afiliado do produto se cadastrado; se não tiver, usa /go/:id
+  const directUrl = product.affiliateUrl?.trim();
+  const offerLink = directUrl && directUrl.startsWith("http")
+    ? directUrl
+    : new URL(`/go/${product.id}`, origin).toString();
 
   return [
     "🚨 *OFERTA ENCONTRADA!*",
@@ -36,7 +40,7 @@ function offerText(product: ShareProduct, origin: string) {
     discount !== null ? `💥 *${discount}% OFF*` : "",
     "",
     "👉 *PEGUE A OFERTA:*",
-    offerUrl.toString(),
+    offerLink,
     "",
     "⚡ O preço pode mudar a qualquer momento.",
     "🧡 Garagem das Ofertas"

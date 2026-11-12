@@ -48,7 +48,12 @@ function metaContent(html: string, keys: string[]) {
     const attrs: Record<string, string> = {};
     for (const match of tag.matchAll(/([\w:-]+)\s*=\s*["']([^"']*)["']/gi)) attrs[match[1].toLowerCase()] = match[2];
     const key = (attrs.property || attrs.name || attrs.itemprop || "").toLowerCase();
-    if (keys.includes(key) && attrs.content) return decodeHtml(attrs.content);
+    if (keys.includes(key) && attrs.content) {
+      const decoded = decodeHtml(attrs.content);
+      // Ignora respostas genéricas de security check
+      if (/security check/i.test(decoded)) continue;
+      return decoded;
+    }
   }
   return "";
 }
@@ -116,6 +121,10 @@ function extractHtmlTitle(html: string): string {
   const match = html.match(/<title[^>]*>([^<]+)<\/title>/i);
   if (!match) return "";
   const title = decodeHtml(match[1]);
+  // Ignora telas de bloqueio / anti-bot
+  if (/security check|captcha|verify you are human|acesso negado|atenção/i.test(title)) {
+    return "";
+  }
   // Limpar sufixos comuns como " | Shopee Brasil", " no Mercado Livre", etc.
   return title
     .replace(/\s*\|\s*Shopee.*$/i, "")
@@ -127,6 +136,9 @@ function extractHtmlTitle(html: string): string {
 
 async function fetchMarketplacePage(input: URL) {
   let current = input;
+  // WhatsApp crawler UA permite passar pelo bot-guard da Shopee e ler tags OpenGraph/meta
+  const crawlerUa = "WhatsApp/2.23.20.76 A";
+
   for (let redirect = 0; redirect < 8; redirect += 1) {
     assertSafeUrl(current.toString());
     let response: Response;
@@ -135,8 +147,8 @@ async function fetchMarketplacePage(input: URL) {
         redirect: "manual",
         signal: AbortSignal.timeout(10_000),
         headers: {
-          "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
-          "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+          "user-agent": crawlerUa,
+          "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
           "accept-language": "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7"
         }
       });

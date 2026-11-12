@@ -24,5 +24,85 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
     { label: "Categorias", value: (categories || []).length, icon: FolderTree },
     { label: "Cliques", value: clickCount || 0, icon: MousePointerClick }
   ];
-  return <div className="container-site py-8"><div className="flex flex-wrap items-center justify-between gap-4"><div><p className="eyebrow">Operação</p><h1 className="text-3xl font-black tracking-[-.04em]">Painel administrativo</h1><p className="mt-1 text-sm text-[#66635b]">{admin.email}</p></div><form action={logout}><button className="btn border border-[#dedbd2]"><LogOut size={17}/>Sair</button></form></div>{(params.erro || params.sucesso) && <p role="status" className={`mt-5 rounded-md p-3 text-sm font-bold ${params.erro ? "bg-red-50 text-red-800" : "bg-green-50 text-green-800"}`}>{params.erro ? "Não foi possível concluir a operação." : "Alterações salvas."}</p>}<section className="mt-7 grid grid-cols-2 gap-3 lg:grid-cols-4">{stats.map(({ label, value, icon: Icon }) => <div key={label} className="surface p-4"><Icon className="text-[#a9460c]" size={21}/><p className="mt-4 text-2xl font-black">{value}</p><p className="text-xs font-bold uppercase tracking-wider text-[#777]">{label}</p></div>)}</section><div className="mt-8"><ProductLinkImporter categories={(categories || []) as Category[]}/></div><div className="mt-8 grid gap-7 lg:grid-cols-[1fr_.8fr]"><AdminProductForm categories={(categories || []) as Category[]} product={editing}/><form action={saveSettings} className="surface h-fit grid gap-4 p-5"><h2 className="section-title">Comunidades</h2><label className="grid gap-1 text-sm font-bold">WhatsApp<input className="field" name="whatsapp_group_url" type="url" defaultValue={setting.whatsapp_group_url || ""}/></label><label className="grid gap-1 text-sm font-bold">Telegram<input className="field" name="telegram_group_url" type="url" defaultValue={setting.telegram_group_url || ""}/></label><p className="text-xs leading-5 text-[#66635b]">Na versão inicial, as variáveis públicas do ambiente continuam sendo a fonte dos botões públicos. Os valores daqui ficam preparados para integração dinâmica.</p><button className="btn btn-primary">Salvar links</button></form></div><section className="mt-10"><div className="mb-4"><h2 className="section-title">Ofertas cadastradas</h2><p className="mt-2 text-sm text-muted">Copie uma mensagem pronta e cole diretamente no seu grupo do WhatsApp.</p></div><div className="overflow-x-auto surface"><table className="w-full min-w-[900px] text-left text-sm"><thead className="bg-[#f6f5f1] text-xs uppercase tracking-wider"><tr><th className="p-3">Produto</th><th className="p-3">Loja</th><th className="p-3">Status</th><th className="p-3 text-right">Ações</th></tr></thead><tbody>{mapped.map((product) => <tr key={product.id} className="border-t border-[#dedbd2]"><td className="p-3 font-bold">{product.title}</td><td className="p-3">{product.store}</td><td className="p-3">{product.active ? "Ativa" : "Inativa"}</td><td className="p-3"><div className="flex flex-wrap justify-end gap-2"><WhatsAppOfferCopy product={{ id: product.id, title: product.title, store: product.store, price: product.price, oldPrice: product.oldPrice }}/><a href={`/admin?editar=${product.id}`} className="btn border border-[#dedbd2] !min-h-9 px-3 py-1">Editar</a><form action={toggleProduct}><input type="hidden" name="id" value={product.id}/><input type="hidden" name="active" value={String(product.active)}/><button className="btn border border-[#dedbd2] !min-h-9 px-3 py-1">{product.active ? "Desativar" : "Ativar"}</button></form><form action={deleteProduct}><input type="hidden" name="id" value={product.id}/><button className="btn !min-h-9 bg-red-700 px-3 py-1 text-white">Excluir</button></form></div></td></tr>)}</tbody></table></div></section></div>;
+  return <div className="container-site py-8"><div className="flex flex-wrap items-center justify-between gap-4"><div><p className="eyebrow">Operação</p><h1 className="text-3xl font-black tracking-[-.04em]">Painel administrativo</h1><p className="mt-1 text-sm text-[#66635b]">{admin.email}</p></div><form action={logout}><button className="btn border border-[#dedbd2]"><LogOut size={17}/>Sair</button></form></div>{(params.erro || params.sucesso) && <p role="status" className={`mt-5 rounded-md p-3 text-sm font-bold ${params.erro ? "bg-red-50 text-red-800" : "bg-green-50 text-green-800"}`}>{params.erro ? "Não foi possível concluir a operação." : "Alterações salvas."}</p>}<section className="mt-7 grid grid-cols-2 gap-3 lg:grid-cols-4">{stats.map(({ label, value, icon: Icon }) => <div key={label} className="surface p-4"><Icon className="text-[#a9460c]" size={21}/><p className="mt-4 text-2xl font-black">{value}</p><p className="text-xs font-bold uppercase tracking-wider text-[#777]">{label}</p></div>)}</section><div className="mt-8"><ProductLinkImporter categories={(categories || []) as Category[]}/></div><div className="mt-8 grid gap-7 lg:grid-cols-[1fr_.8fr]"><AdminProductForm categories={(categories || []) as Category[]} product={editing}/><form action={saveSettings} className="surface h-fit grid gap-4 p-5"><h2 className="section-title">Comunidades</h2><label className="grid gap-1 text-sm font-bold">WhatsApp<input className="field" name="whatsapp_group_url" type="url" defaultValue={setting.whatsapp_group_url || ""}/></label><label className="grid gap-1 text-sm font-bold">Telegram<input className="field" name="telegram_group_url" type="url" defaultValue={setting.telegram_group_url || ""}/></label><p className="text-xs leading-5 text-[#66635b]">Na versão inicial, as variáveis públicas do ambiente continuam sendo a fonte dos botões públicos. Os valores daqui ficam preparados para integração dinâmica.</p><button className="btn btn-primary">Salvar links</button></form></div><section className="mt-10">
+  <div className="mb-4">
+    <h2 className="section-title">Ofertas cadastradas</h2>
+    <p className="mt-2 text-sm text-muted">Copie uma mensagem pronta ou envie diretamente no seu grupo do WhatsApp.</p>
+  </div>
+
+  {/* Visualização otimizada para Mobile em Cards */}
+  <div className="grid gap-3 sm:hidden">
+    {mapped.map((product) => (
+      <div key={product.id} className="surface flex flex-col gap-3 p-4">
+        <div className="flex items-start justify-between gap-2">
+          <p className="font-bold text-base leading-snug">{product.title}</p>
+          <span className="rounded-full border border-[var(--line)] bg-[var(--surface-muted)] px-2.5 py-0.5 text-[11px] font-black uppercase shrink-0">
+            {product.store}
+          </span>
+        </div>
+        <div className="flex items-center justify-between text-sm text-muted">
+          <span>{product.price ? `R$ ${Number(product.price).toFixed(2).replace(".", ",")}` : "Sem preço definido"}</span>
+          <span className={`text-xs font-bold ${product.active ? "text-emerald-700" : "text-neutral-500"}`}>
+            ● {product.active ? "Ativa" : "Inativa"}
+          </span>
+        </div>
+        <div className="flex flex-col gap-2 pt-2 border-t border-[var(--line)]">
+          <div className="w-full">
+            <WhatsAppOfferCopy product={{ id: product.id, title: product.title, store: product.store, price: product.price, oldPrice: product.oldPrice, affiliateUrl: product.affiliateUrl }}/>
+          </div>
+          <div className="flex items-center gap-2">
+            <a href={`/admin?editar=${product.id}`} className="btn border border-[#dedbd2] !min-h-9 flex-1 text-xs">Editar</a>
+            <form action={toggleProduct} className="flex-1">
+              <input type="hidden" name="id" value={product.id}/>
+              <input type="hidden" name="active" value={String(product.active)}/>
+              <button className="btn border border-[#dedbd2] !min-h-9 w-full text-xs">{product.active ? "Desativar" : "Ativar"}</button>
+            </form>
+            <form action={deleteProduct}>
+              <input type="hidden" name="id" value={product.id}/>
+              <button className="btn !min-h-9 bg-red-700 px-3 text-xs text-white">Excluir</button>
+            </form>
+          </div>
+        </div>
+      </div>
+    ))}
+  </div>
+
+  {/* Visualização para Desktop/Tablet em Tabela */}
+  <div className="hidden sm:block overflow-x-auto surface">
+    <table className="w-full min-w-[760px] text-left text-sm">
+      <thead className="bg-[#f6f5f1] text-xs uppercase tracking-wider">
+        <tr>
+          <th className="p-3">Produto</th>
+          <th className="p-3">Loja</th>
+          <th className="p-3">Status</th>
+          <th className="p-3 text-right">Ações</th>
+        </tr>
+      </thead>
+      <tbody>
+        {mapped.map((product) => (
+          <tr key={product.id} className="border-t border-[#dedbd2]">
+            <td className="p-3 font-bold max-w-xs truncate">{product.title}</td>
+            <td className="p-3 whitespace-nowrap">{product.store}</td>
+            <td className="p-3 whitespace-nowrap">{product.active ? "Ativa" : "Inativa"}</td>
+            <td className="p-3">
+              <div className="flex flex-wrap justify-end gap-2">
+                <WhatsAppOfferCopy product={{ id: product.id, title: product.title, store: product.store, price: product.price, oldPrice: product.oldPrice, affiliateUrl: product.affiliateUrl }}/>
+                <a href={`/admin?editar=${product.id}`} className="btn border border-[#dedbd2] !min-h-9 px-3 py-1">Editar</a>
+                <form action={toggleProduct}>
+                  <input type="hidden" name="id" value={product.id}/>
+                  <input type="hidden" name="active" value={String(product.active)}/>
+                  <button className="btn border border-[#dedbd2] !min-h-9 px-3 py-1">{product.active ? "Desativar" : "Ativar"}</button>
+                </form>
+                <form action={deleteProduct}>
+                  <input type="hidden" name="id" value={product.id}/>
+                  <button className="btn !min-h-9 bg-red-700 px-3 py-1 text-white">Excluir</button>
+                </form>
+              </div>
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+</section></div>;
 }
