@@ -19,7 +19,6 @@
     "react-dom": "latest"
   },
   "devDependencies": {
-    "@next/swc-win32-x64-msvc": "^16.4.6",
     "@tailwindcss/postcss": "latest",
     "@types/node": "latest",
     "@types/react": "latest",
