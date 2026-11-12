@@ -4,8 +4,8 @@ export const siteConfig = {
   description: "Achadinhos selecionados de ferramentas, eletrônicos, casa e muito mais.",
   url: process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000",
   community: {
-    whatsapp: process.env.NEXT_PUBLIC_WHATSAPP_GROUP_URL || "",
-    telegram: process.env.NEXT_PUBLIC_TELEGRAM_GROUP_URL || ""
+    whatsapp: process.env.NEXT_PUBLIC_WHATSAPP_GROUP_URL || "https://chat.whatsapp.com/FSIQPdNvpauIaBKLyJwW8R?s=sh&p=a&iam=2",
+    telegram: process.env.NEXT_PUBLIC_TELEGRAM_GROUP_URL || "https://t.me/acheinaamazonn"
   },
   social: { instagram: "", tiktok: "", pinterest: "" }
 } as const;

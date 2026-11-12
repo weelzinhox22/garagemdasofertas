@@ -90,45 +90,143 @@ function inferCategory(text: string) {
   return rules.find(([, terms]) => terms.some((term) => normalized.includes(term)))?.[0] || "utilidades";
 }
 
+function extractTitleFromUrl(url: URL): string {
+  try {
+    const pathname = decodeURIComponent(url.pathname);
+    // Exemplo Shopee: /Nome-Do-Produto-i.12345.6789 ou /product/123/456
+    const segments = pathname.split("/").filter(Boolean);
+    for (const segment of segments) {
+      if (segment.includes("-i.") || segment.includes("-")) {
+        const clean = segment
+          .replace(/-i\.\d+\.\d+$/i, "")
+          .replace(/[-_]+/g, " ")
+          .trim();
+        if (clean.length > 5 && !/^(product|item|view|p)$/i.test(clean)) {
+          return clean.charAt(0).toUpperCase() + clean.slice(1);
+        }
+      }
+    }
+  } catch {
+    /* fallback silencioso */
+  }
+  return "";
+}
+
+function extractHtmlTitle(html: string): string {
+  const match = html.match(/<title[^>]*>([^<]+)<\/title>/i);
+  if (!match) return "";
+  const title = decodeHtml(match[1]);
+  // Limpar sufixos comuns como " | Shopee Brasil", " no Mercado Livre", etc.
+  return title
+    .replace(/\s*\|\s*Shopee.*$/i, "")
+    .replace(/\s*\|\s*TikTok.*$/i, "")
+    .replace(/\s*no Mercado Livre.*$/i, "")
+    .replace(/\s*\|\s*Mercado Livre.*$/i, "")
+    .trim();
+}
+
 async function fetchMarketplacePage(input: URL) {
   let current = input;
-  for (let redirect = 0; redirect < 5; redirect += 1) {
+  for (let redirect = 0; redirect < 8; redirect += 1) {
     assertSafeUrl(current.toString());
-    const response = await fetch(current, {
-      redirect: "manual",
-      signal: AbortSignal.timeout(9_000),
-      headers: { "user-agent": "Mozilla/5.0 (compatible; GaragemDasOfertas/1.0)", accept: "text/html,application/xhtml+xml" }
-    });
+    let response: Response;
+    try {
+      response = await fetch(current, {
+        redirect: "manual",
+        signal: AbortSignal.timeout(10_000),
+        headers: {
+          "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+          "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+          "accept-language": "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7"
+        }
+      });
+    } catch {
+      break;
+    }
+
     if ([301, 302, 303, 307, 308].includes(response.status)) {
       const location = response.headers.get("location");
-      if (!location) throw new Error("A loja retornou um redirecionamento inválido.");
-      current = assertSafeUrl(new URL(location, current).toString());
-      continue;
+      if (!location) break;
+      try {
+        current = assertSafeUrl(new URL(location, current).toString());
+        continue;
+      } catch {
+        break;
+      }
     }
-    if (!response.ok) throw new Error("A loja não permitiu ler os dados desse produto.");
-    if (!(response.headers.get("content-type") || "").includes("text/html")) throw new Error("O link não aponta para uma página de produto.");
+
+    if (!response.ok) break;
+    const contentType = response.headers.get("content-type") || "";
+    if (!contentType.includes("text/html")) break;
     const size = Number(response.headers.get("content-length") || 0);
-    if (size > 2_500_000) throw new Error("A página retornada é muito grande para importação automática.");
-    return { html: (await response.text()).slice(0, 2_500_000), finalUrl: current };
+    if (size > 3_000_000) break;
+    return { html: (await response.text()).slice(0, 3_000_000), finalUrl: current };
   }
-  throw new Error("O link passou por redirecionamentos demais.");
+  return { html: "", finalUrl: current };
 }
 
 export async function inspectMarketplaceProduct(value: string): Promise<ImportedProductDraft> {
   const sourceUrl = assertSafeUrl(value.trim());
   const { html, finalUrl } = await fetchMarketplacePage(sourceUrl);
-  const store = detectStore(finalUrl);
+  const store = detectStore(finalUrl) || detectStore(sourceUrl);
   if (!store) throw new Error("Não foi possível identificar a plataforma.");
-  const structured = jsonLdProduct(html);
+
+  const structured = html ? jsonLdProduct(html) : null;
   const structuredImage = Array.isArray(structured?.image) ? structured?.image[0] : structured?.image;
-  const title = decodeHtml(String(structured?.name || metaContent(html, ["og:title", "twitter:title"]) || ""));
-  const description = decodeHtml(String(structured?.description || metaContent(html, ["og:description", "description", "twitter:description"]) || ""));
-  const imageUrl = String(structuredImage || metaContent(html, ["og:image", "twitter:image", "twitter:image:src"]) || "");
-  if (!title) throw new Error("A loja não disponibilizou o título automaticamente. Cadastre o produto manualmente.");
-  if (imageUrl) { const image = new URL(imageUrl, finalUrl); if (image.protocol !== "https:") throw new Error("A imagem retornada pela loja não é segura."); }
+
+  let title = decodeHtml(
+    String(
+      structured?.name ||
+      metaContent(html, ["og:title", "twitter:title"]) ||
+      extractHtmlTitle(html) ||
+      ""
+    )
+  );
+
+  // Fallback caso a loja bloqueie o HTML do crawler (comum em Shopee e TikTok Shop)
+  if (!title) {
+    title = extractTitleFromUrl(finalUrl) || extractTitleFromUrl(sourceUrl);
+  }
+
+  // Se mesmo assim não achar título da loja (ex: encurtador puro com antibot rígido), define sugestão para não travar
+  if (!title) {
+    title = `Produto ${store}`;
+  }
+
+  const description = decodeHtml(
+    String(
+      structured?.description ||
+      metaContent(html, ["og:description", "description", "twitter:description"]) ||
+      ""
+    )
+  );
+
+  const imageUrl = String(
+    structuredImage ||
+    metaContent(html, ["og:image", "twitter:image", "twitter:image:src"]) ||
+    ""
+  );
+
+  let safeImageUrl = "";
+  if (imageUrl) {
+    try {
+      const image = new URL(imageUrl, finalUrl);
+      if (image.protocol === "https:") {
+        safeImageUrl = image.toString();
+      }
+    } catch {
+      safeImageUrl = "";
+    }
+  }
+
   return {
-    sourceUrl: sourceUrl.toString(), finalUrl: finalUrl.toString(), store, title: title.slice(0, 180),
-    slug: slugify(title), description: description.slice(0, 1_500), imageUrl: imageUrl ? new URL(imageUrl, finalUrl).toString() : "",
+    sourceUrl: sourceUrl.toString(),
+    finalUrl: finalUrl.toString(),
+    store,
+    title: title.slice(0, 180),
+    slug: slugify(title),
+    description: description.slice(0, 1_500),
+    imageUrl: safeImageUrl,
     categorySlug: inferCategory(`${title} ${description}`)
   };
 }

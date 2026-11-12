@@ -24,10 +24,8 @@ export function CommunityModal() {
   useEffect(() => {
     const onOpen = () => { previousFocus.current = document.activeElement as HTMLElement; setOpen(true); };
     window.addEventListener("open-community", onOpen);
-    try {
-      const state = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null");
-      if (!state?.until || state.until < Date.now()) requestAnimationFrame(onOpen);
-    } catch { requestAnimationFrame(onOpen); }
+    // Abre automaticamente assim que o site carrega
+    requestAnimationFrame(onOpen);
     return () => window.removeEventListener("open-community", onOpen);
   }, []);
 
