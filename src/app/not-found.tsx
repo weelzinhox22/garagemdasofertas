@@ -1,0 +1,2 @@
+import Link from "next/link";
+export default function NotFound() { return <div className="container-site grid min-h-[55vh] place-items-center py-16 text-center"><div><p className="eyebrow">Erro 404</p><h1 className="mt-2 text-4xl font-black tracking-[-.04em]">Essa oferta saiu da garagem.</h1><p className="mt-3 text-[#66635b]">A página não existe ou não está mais disponível.</p><Link href="/" className="btn btn-primary mt-6">Voltar ao início</Link></div></div>; }

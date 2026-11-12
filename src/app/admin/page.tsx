@@ -1,0 +1,27 @@
+import type { Metadata } from "next";
+import { BarChart3, FolderTree, LogOut, MousePointerClick, Package } from "lucide-react";
+import { AdminProductForm } from "@/components/admin-product-form";
+import { deleteProduct, logout, saveSettings, toggleProduct } from "./actions";
+import { requireAdmin } from "@/lib/auth";
+import { createAdminClient } from "@/lib/supabase/admin";
+import type { Category, Product } from "@/types";
+import type { LucideIcon } from "lucide-react";
+import { ProductLinkImporter } from "@/components/product-link-importer";
+
+export const dynamic = "force-dynamic";
+export const metadata: Metadata = { title: "Painel administrativo", robots: { index: false, follow: false } };
+export default async function AdminPage({ searchParams }: { searchParams: Promise<{ editar?: string; erro?: string; sucesso?: string }> }) {
+  const admin = await requireAdmin(); const params = await searchParams; const supabase = createAdminClient();
+  const [{ data: products }, { data: categories }, { count: clickCount }, { data: settings }] = await Promise.all([
+    supabase.from("products").select("*").order("created_at", { ascending: false }), supabase.from("categories").select("*").order("position"), supabase.from("product_clicks").select("id", { count: "exact", head: true }), supabase.from("site_settings").select("key,value")
+  ]);
+  const mapped = (products || []).map((p) => ({ id: p.id, slug: p.slug, title: p.title, description: p.description || "", categorySlug: p.category_slug, store: p.store, imageUrl: p.image_url, price: p.price, oldPrice: p.old_price, affiliateUrl: p.affiliate_url, featured: p.featured, active: p.active, createdAt: p.created_at })) as Product[];
+  const editing = mapped.find((p) => p.id === params.editar); const setting = Object.fromEntries((settings || []).map((item) => [item.key, item.value]));
+  const stats: { label: string; value: number; icon: LucideIcon }[] = [
+    { label: "Ofertas", value: mapped.length, icon: Package },
+    { label: "Ativas", value: mapped.filter((p) => p.active).length, icon: BarChart3 },
+    { label: "Categorias", value: (categories || []).length, icon: FolderTree },
+    { label: "Cliques", value: clickCount || 0, icon: MousePointerClick }
+  ];
+  return <div className="container-site py-8"><div className="flex flex-wrap items-center justify-between gap-4"><div><p className="eyebrow">Operação</p><h1 className="text-3xl font-black tracking-[-.04em]">Painel administrativo</h1><p className="mt-1 text-sm text-[#66635b]">{admin.email}</p></div><form action={logout}><button className="btn border border-[#dedbd2]"><LogOut size={17}/>Sair</button></form></div>{(params.erro || params.sucesso) && <p role="status" className={`mt-5 rounded-md p-3 text-sm font-bold ${params.erro ? "bg-red-50 text-red-800" : "bg-green-50 text-green-800"}`}>{params.erro ? "Não foi possível concluir a operação." : "Alterações salvas."}</p>}<section className="mt-7 grid grid-cols-2 gap-3 lg:grid-cols-4">{stats.map(({ label, value, icon: Icon }) => <div key={label} className="surface p-4"><Icon className="text-[#a9460c]" size={21}/><p className="mt-4 text-2xl font-black">{value}</p><p className="text-xs font-bold uppercase tracking-wider text-[#777]">{label}</p></div>)}</section><div className="mt-8"><ProductLinkImporter categories={(categories || []) as Category[]}/></div><div className="mt-8 grid gap-7 lg:grid-cols-[1fr_.8fr]"><AdminProductForm categories={(categories || []) as Category[]} product={editing}/><form action={saveSettings} className="surface h-fit grid gap-4 p-5"><h2 className="section-title">Comunidades</h2><label className="grid gap-1 text-sm font-bold">WhatsApp<input className="field" name="whatsapp_group_url" type="url" defaultValue={setting.whatsapp_group_url || ""}/></label><label className="grid gap-1 text-sm font-bold">Telegram<input className="field" name="telegram_group_url" type="url" defaultValue={setting.telegram_group_url || ""}/></label><p className="text-xs leading-5 text-[#66635b]">Na versão inicial, as variáveis públicas do ambiente continuam sendo a fonte dos botões públicos. Os valores daqui ficam preparados para integração dinâmica.</p><button className="btn btn-primary">Salvar links</button></form></div><section className="mt-10"><h2 className="section-title mb-4">Ofertas cadastradas</h2><div className="overflow-x-auto surface"><table className="w-full min-w-[700px] text-left text-sm"><thead className="bg-[#f6f5f1] text-xs uppercase tracking-wider"><tr><th className="p-3">Produto</th><th className="p-3">Loja</th><th className="p-3">Status</th><th className="p-3 text-right">Ações</th></tr></thead><tbody>{mapped.map((product) => <tr key={product.id} className="border-t border-[#dedbd2]"><td className="p-3 font-bold">{product.title}</td><td className="p-3">{product.store}</td><td className="p-3">{product.active ? "Ativa" : "Inativa"}</td><td className="p-3"><div className="flex justify-end gap-2"><a href={`/admin?editar=${product.id}`} className="btn border border-[#dedbd2] !min-h-9 px-3 py-1">Editar</a><form action={toggleProduct}><input type="hidden" name="id" value={product.id}/><input type="hidden" name="active" value={String(product.active)}/><button className="btn border border-[#dedbd2] !min-h-9 px-3 py-1">{product.active ? "Desativar" : "Ativar"}</button></form><form action={deleteProduct}><input type="hidden" name="id" value={product.id}/><button className="btn !min-h-9 bg-red-700 px-3 py-1 text-white">Excluir</button></form></div></td></tr>)}</tbody></table></div></section></div>;
+}
