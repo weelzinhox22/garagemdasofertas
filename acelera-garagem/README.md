@@ -41,7 +41,9 @@ Para realmente buscar ofertas de marketplaces, conecte um feed ou API para a qua
 
 ## Busca automatica no Mercado Livre
 
-Configure `MERCADOLIVRE_CLIENT_ID`, `MERCADOLIVRE_CLIENT_SECRET`, `MERCADOLIVRE_ACCESS_TOKEN` e `MERCADOLIVRE_REFRESH_TOKEN` na Vercel. O sistema consulta o catalogo oficial por palavra-chave, guarda o novo refresh token a cada renovacao e evita reenviar o mesmo item no mesmo preco.
+Configure `MERCADOLIVRE_CLIENT_ID`, `MERCADOLIVRE_CLIENT_SECRET` e `MERCADOLIVRE_REDIRECT_URI` na Vercel. A Redirect URI deve ser exatamente `https://SEU-DOMINIO/api/mercadolivre/callback` e precisa ser cadastrada com o mesmo valor no aplicativo do Mercado Livre. Depois use **Conectar Mercado Livre** no painel; o sistema recebe, protege e renova os tokens automaticamente.
+
+`MERCADOLIVRE_ACCESS_TOKEN` e `MERCADOLIVRE_REFRESH_TOKEN` continuam aceitos como alternativa para uma configuracao manual, mas nao sao necessarios quando o botao de conexao OAuth e usado.
 
 Depois, abra `/painel`, cadastre uma busca, defina o desconto minimo e clique em **Executar agora**. O Supabase Cron repetira as buscas de hora em hora.
 

@@ -11,9 +11,10 @@ type State = {
   destinations: Array<{ id: string; name: string; channel: string; external_id: string; active: boolean }>;
   deliveries: Array<{ id: number; status: string; attempts: number; last_error: string | null }>;
   searchSetupRequired: boolean;
+  mercadoLivreConnected: boolean;
 };
 
-const empty: State = { offers: [], sources: [], searches: [], destinations: [], deliveries: [], searchSetupRequired: false };
+const empty: State = { offers: [], sources: [], searches: [], destinations: [], deliveries: [], searchSetupRequired: false, mercadoLivreConnected: false };
 
 export function Dashboard() {
   const [token, setToken] = useState("");
@@ -75,6 +76,14 @@ export function Dashboard() {
     finally { setLoading(false); }
   }
 
+  async function connectMercadoLivre() {
+    setLoading(true); setMessage("");
+    try {
+      const result = await request("/api/mercadolivre/connect", { method: "POST", body: "{}" });
+      window.location.assign(String(result.url));
+    } catch (error) { setMessage(error instanceof Error ? error.message : "Falha ao conectar Mercado Livre"); setLoading(false); }
+  }
+
   const pending = state.deliveries.filter((item) => item.status === "pending").length;
   const sent = state.deliveries.filter((item) => item.status === "sent").length;
 
@@ -90,7 +99,7 @@ export function Dashboard() {
       <div id="visao" className="stats"><article><span><Bot/></span><div><small>OFERTAS</small><strong>{state.offers.length}</strong></div></article><article><span><Search/></span><div><small>BUSCAS ATIVAS</small><strong>{state.searches.filter((item) => item.active).length}</strong></div></article><article><span><Send/></span><div><small>NA FILA</small><strong>{pending}</strong></div></article><article><span><CheckCircle2/></span><div><small>ENVIADAS</small><strong>{sent}</strong></div></article></div>
 
       <div className="panel-grid">
-        <form id="buscas" className="panel form-panel" onSubmit={(event) => { event.preventDefault(); void submit("/api/searches", event.currentTarget); }}><div className="panel-title"><span><Search/></span><div><small>DESCOBERTA AUTOMÁTICA</small><h2>Buscar no Mercado Livre</h2></div></div><label>Nome da busca<input name="name" required placeholder="Ferramentas em oferta"/></label><label>Produto ou palavra-chave<input name="query" required placeholder="furadeira sem fio"/></label><div className="fields two"><label>Desconto mínimo (%)<input name="minDiscount" type="number" min="0" max="100" defaultValue="10"/></label><label>Limite por ciclo<input name="resultLimit" type="number" min="1" max="20" defaultValue="10"/></label></div><p className="help">A busca roda automaticamente a cada hora. Um produto no mesmo preço não será enviado novamente.</p><button disabled={loading || state.searchSetupRequired} className="button primary"><Search size={17}/>Salvar busca automática</button></form>
+        <form id="buscas" className="panel form-panel" onSubmit={(event) => { event.preventDefault(); void submit("/api/searches", event.currentTarget); }}><div className="panel-title"><span><Search/></span><div><small>DESCOBERTA AUTOMÁTICA</small><h2>Buscar no Mercado Livre</h2></div></div><div className={`connection-state ${state.mercadoLivreConnected ? "connected" : ""}`}><div><strong>{state.mercadoLivreConnected ? "Mercado Livre conectado" : "Conecte sua conta primeiro"}</strong><small>{state.mercadoLivreConnected ? "Tokens protegidos e renovação automática ativa." : "Autorize o aplicativo para liberar as buscas reais."}</small></div>{!state.mercadoLivreConnected && <button type="button" onClick={connectMercadoLivre} disabled={loading} className="button secondary">Conectar Mercado Livre</button>}</div><label>Nome da busca<input name="name" required placeholder="Ferramentas em oferta"/></label><label>Produto ou palavra-chave<input name="query" required placeholder="furadeira sem fio"/></label><div className="fields two"><label>Desconto mínimo (%)<input name="minDiscount" type="number" min="0" max="100" defaultValue="10"/></label><label>Limite por ciclo<input name="resultLimit" type="number" min="1" max="20" defaultValue="10"/></label></div><p className="help">A busca roda automaticamente a cada hora. Um produto no mesmo preço não será enviado novamente.</p><button disabled={loading || state.searchSetupRequired || !state.mercadoLivreConnected} className="button primary"><Search size={17}/>Salvar busca automática</button></form>
         <div className="panel activity-panel"><div className="panel-title"><span><Radio/></span><div><small>MONITORAMENTO</small><h2>Buscas configuradas</h2></div></div><div className="offer-list search-list">{state.searches.length ? state.searches.map((search) => <article key={search.id}><span className="search-badge"><Search/></span><div><strong>{search.name}</strong><small>“{search.query}” · mínimo {Number(search.min_discount)}% · {search.result_limit} itens</small>{search.last_error && <small className="error-text">{search.last_error}</small>}</div></article>) : <p className="empty-state">Cadastre sua primeira busca ao lado.</p>}</div></div>
       </div>
 

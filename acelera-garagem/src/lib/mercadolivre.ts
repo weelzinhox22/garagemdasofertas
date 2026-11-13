@@ -107,3 +107,30 @@ export async function searchMercadoLivre(query: string, minDiscount: number, lim
   }
   return offers;
 }
+
+export function mercadoLivreRedirectUri() {
+  const value = process.env.MERCADOLIVRE_REDIRECT_URI;
+  if (!value) throw new Error("MERCADOLIVRE_REDIRECT_URI nao configurada");
+  return value;
+}
+
+export async function exchangeAuthorizationCode(code: string) {
+  const clientId = process.env.MERCADOLIVRE_CLIENT_ID;
+  const clientSecret = process.env.MERCADOLIVRE_CLIENT_SECRET;
+  if (!clientId || !clientSecret) throw new Error("Client ID ou Client Secret do Mercado Livre ausente");
+  const response = await fetch("https://api.mercadolibre.com/oauth/token", {
+    method: "POST",
+    headers: { accept: "application/json", "content-type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({ grant_type: "authorization_code", client_id: clientId, client_secret: clientSecret, code, redirect_uri: mercadoLivreRedirectUri() })
+  });
+  const payload = await response.json();
+  if (!response.ok || !payload.access_token || !payload.refresh_token) throw new Error(payload.message || payload.error_description || `Mercado Livre respondeu ${response.status}`);
+  const { error } = await database().from("automation_marketplace_credentials").upsert({
+    marketplace: "mercadolivre",
+    access_token: String(payload.access_token),
+    refresh_token: String(payload.refresh_token),
+    expires_at: new Date(Date.now() + Number(payload.expires_in || 21_600) * 1000).toISOString(),
+    updated_at: new Date().toISOString()
+  });
+  if (error) throw new Error(error.message);
+}
