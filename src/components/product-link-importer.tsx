@@ -52,12 +52,10 @@ export function ProductLinkImporter({ categories }: { categories: Category[] }) 
 
       <label className="grid gap-1 text-sm font-bold md:col-span-2">
         Imagem da oferta (URL)
-        <input className="field" name="image_url" type="url" required placeholder="https://..." defaultValue={state.draft.imageUrl}/>
-        {!state.draft.imageUrl && (
-          <span className="text-xs font-normal text-amber-600">
-            A plataforma protegeu a imagem automaticamente. Cole o link da imagem ou foto do produto.
-          </span>
-        )}
+        <input className="field" name="image_url" type="text" required placeholder="https://... ou caminho da imagem" defaultValue={state.draft.imageUrl}/>
+        <span className="text-xs font-normal text-muted">
+          Caso o TikTok Shop ou Shopee proteja a foto por anti-bot, você pode alterar esse link colando a foto do produto ou mantendo a imagem ilustrativa da categoria.
+        </span>
       </label>
 
       <label className="grid gap-1 text-sm font-bold md:col-span-2">

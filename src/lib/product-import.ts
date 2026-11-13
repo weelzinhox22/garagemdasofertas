@@ -177,6 +177,24 @@ async function fetchMarketplacePage(input: URL) {
   return { html: "", finalUrl: current };
 }
 
+function isPlaceholderOrLogo(url: string): boolean {
+  if (!url) return true;
+  return /tts-logo|poster-square|logo\.png|favicon|default_avatar|empty/i.test(url);
+}
+
+function extractImagesFromHtml(html: string): string[] {
+  const urls: string[] = [];
+  const regex = /https:\/\/[^"'\s\)]+\.(?:jpg|jpeg|png|webp|avif)(?:\?[^"'\s\)]*)?/gi;
+  let match: RegExpExecArray | null;
+  while ((match = regex.exec(html)) !== null) {
+    const found = match[0];
+    if (!isPlaceholderOrLogo(found)) {
+      urls.push(found);
+    }
+  }
+  return urls;
+}
+
 export async function inspectMarketplaceProduct(value: string): Promise<ImportedProductDraft> {
   const sourceUrl = assertSafeUrl(value.trim());
   const { html, finalUrl } = await fetchMarketplacePage(sourceUrl);
@@ -213,22 +231,43 @@ export async function inspectMarketplaceProduct(value: string): Promise<Imported
     )
   );
 
-  const imageUrl = String(
+  let rawImage = String(
     structuredImage ||
     metaContent(html, ["og:image", "twitter:image", "twitter:image:src"]) ||
     ""
   );
 
+  // Se a imagem extraída for o logo padrão de segurança do TikTok ou Shopee, tenta procurar outra imagem no HTML
+  if (isPlaceholderOrLogo(rawImage)) {
+    const candidates = extractImagesFromHtml(html);
+    rawImage = candidates[0] || "";
+  }
+
   let safeImageUrl = "";
-  if (imageUrl) {
+  if (rawImage) {
     try {
-      const image = new URL(imageUrl, finalUrl);
+      const image = new URL(rawImage, finalUrl);
       if (image.protocol === "https:") {
         safeImageUrl = image.toString();
       }
     } catch {
       safeImageUrl = "";
     }
+  }
+
+  // Se o TikTok Shop ou Shopee bloquear a imagem por anti-bot estrito, usamos uma imagem padrão elegante da categoria
+  if (!safeImageUrl) {
+    const category = inferCategory(`${title} ${description}`);
+    const fallbackCategoryImages: Record<string, string> = {
+      ferramentas: "/products/furadeira-catalogo.webp",
+      eletronicos: "/products/fone-catalogo.webp",
+      informatica: "/products/hub-catalogo.webp",
+      automotivo: "/products/suporte-catalogo.webp",
+      "casa-e-cozinha": "/products/organizador-catalogo.webp",
+      acessorios: "/products/kit-catalogo.webp",
+      utilidades: "/products/kit-catalogo.webp"
+    };
+    safeImageUrl = fallbackCategoryImages[category] || "/products/kit-catalogo.webp";
   }
 
   return {
