@@ -11,6 +11,14 @@ import { WhatsAppOfferCopy } from "@/components/whatsapp-offer-copy";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Painel administrativo", robots: { index: false, follow: false } };
+const errorMessages: Record<string, string> = {
+  "produto-invalido": "Preencha os campos obrigatórios da oferta.",
+  "slug-duplicado": "Já existe uma oferta com esse slug. Altere-o e tente novamente.",
+  "categoria-invalida": "A categoria selecionada não existe no Supabase.",
+  "dados-invalidos": "A loja, a imagem ou os preços não passaram pela validação. Revise os campos.",
+  "url-do-site": "Configure NEXT_PUBLIC_SITE_URL na Vercel para usar imagens locais.",
+  salvar: "O Supabase não conseguiu salvar a oferta. Consulte os logs da Vercel para mais detalhes."
+};
 export default async function AdminPage({ searchParams }: { searchParams: Promise<{ editar?: string; erro?: string; sucesso?: string }> }) {
   const admin = await requireAdmin(); const params = await searchParams; const supabase = createAdminClient();
   const [{ data: products }, { data: categories }, { count: clickCount }, { data: settings }] = await Promise.all([
@@ -24,10 +32,10 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
     { label: "Categorias", value: (categories || []).length, icon: FolderTree },
     { label: "Cliques", value: clickCount || 0, icon: MousePointerClick }
   ];
-  return <div className="container-site py-8"><div className="flex flex-wrap items-center justify-between gap-4"><div><p className="eyebrow">Operação</p><h1 className="text-3xl font-black tracking-[-.04em]">Painel administrativo</h1><p className="mt-1 text-sm text-[#66635b]">{admin.email}</p></div><form action={logout}><button className="btn border border-[#dedbd2]"><LogOut size={17}/>Sair</button></form></div>{(params.erro || params.sucesso) && <p role="status" className={`mt-5 rounded-md p-3 text-sm font-bold ${params.erro ? "bg-red-50 text-red-800" : "bg-green-50 text-green-800"}`}>{params.erro ? "Não foi possível concluir a operação." : "Alterações salvas."}</p>}<section className="mt-7 grid grid-cols-2 gap-3 lg:grid-cols-4">{stats.map(({ label, value, icon: Icon }) => <div key={label} className="surface p-4"><Icon className="text-[#a9460c]" size={21}/><p className="mt-4 text-2xl font-black">{value}</p><p className="text-xs font-bold uppercase tracking-wider text-[#777]">{label}</p></div>)}</section><div className="mt-8"><ProductLinkImporter categories={(categories || []) as Category[]}/></div><div className="mt-8 grid gap-7 lg:grid-cols-[1fr_.8fr]"><AdminProductForm categories={(categories || []) as Category[]} product={editing}/><form action={saveSettings} className="surface h-fit grid gap-4 p-5"><h2 className="section-title">Comunidades</h2><label className="grid gap-1 text-sm font-bold">WhatsApp<input className="field" name="whatsapp_group_url" type="url" defaultValue={setting.whatsapp_group_url || ""}/></label><label className="grid gap-1 text-sm font-bold">Telegram<input className="field" name="telegram_group_url" type="url" defaultValue={setting.telegram_group_url || ""}/></label><p className="text-xs leading-5 text-[#66635b]">Na versão inicial, as variáveis públicas do ambiente continuam sendo a fonte dos botões públicos. Os valores daqui ficam preparados para integração dinâmica.</p><button className="btn btn-primary">Salvar links</button></form></div><section className="mt-10">
+  return <div className="container-site py-8"><div className="flex flex-wrap items-center justify-between gap-4"><div><p className="eyebrow">Operação</p><h1 className="text-3xl font-black tracking-[-.04em]">Painel administrativo</h1><p className="mt-1 text-sm text-[#66635b]">{admin.email}</p></div><form action={logout}><button className="btn border border-[#dedbd2]"><LogOut size={17}/>Sair</button></form></div>{(params.erro || params.sucesso) && <p role="status" className={`mt-5 rounded-md p-3 text-sm font-bold ${params.erro ? "bg-red-50 text-red-800" : "bg-green-50 text-green-800"}`}>{params.erro ? errorMessages[params.erro] || "Não foi possível concluir a operação." : "Alterações salvas."}</p>}<section className="mt-7 grid grid-cols-2 gap-3 lg:grid-cols-4">{stats.map(({ label, value, icon: Icon }) => <div key={label} className="surface p-4"><Icon className="text-[#a9460c]" size={21}/><p className="mt-4 text-2xl font-black">{value}</p><p className="text-xs font-bold uppercase tracking-wider text-[#777]">{label}</p></div>)}</section><div className="mt-8"><ProductLinkImporter categories={(categories || []) as Category[]}/></div><div className="mt-8 grid gap-7 lg:grid-cols-[1fr_.8fr]"><AdminProductForm categories={(categories || []) as Category[]} product={editing}/><form action={saveSettings} className="surface h-fit grid gap-4 p-5"><h2 className="section-title">Comunidades</h2><label className="grid gap-1 text-sm font-bold">WhatsApp<input className="field" name="whatsapp_group_url" type="url" defaultValue={setting.whatsapp_group_url || ""}/></label><label className="grid gap-1 text-sm font-bold">Telegram<input className="field" name="telegram_group_url" type="url" defaultValue={setting.telegram_group_url || ""}/></label><p className="text-xs leading-5 text-[#66635b]">Na versão inicial, as variáveis públicas do ambiente continuam sendo a fonte dos botões públicos. Os valores daqui ficam preparados para integração dinâmica.</p><button className="btn btn-primary">Salvar links</button></form></div><section className="mt-10">
   <div className="mb-4">
     <h2 className="section-title">Ofertas cadastradas</h2>
-    <p className="mt-2 text-sm text-muted">Copie uma mensagem pronta ou envie diretamente no seu grupo do WhatsApp.</p>
+    <p className="mt-2 text-sm text-muted">Copie uma mensagem pronta e cole diretamente no seu grupo do WhatsApp.</p>
   </div>
 
   {/* Visualização otimizada para Mobile em Cards */}
@@ -48,7 +56,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
         </div>
         <div className="flex flex-col gap-2 pt-2 border-t border-[var(--line)]">
           <div className="w-full">
-            <WhatsAppOfferCopy product={{ id: product.id, title: product.title, store: product.store, price: product.price, oldPrice: product.oldPrice, affiliateUrl: product.affiliateUrl }}/>
+            <WhatsAppOfferCopy product={{ id: product.id, title: product.title, store: product.store, price: product.price, oldPrice: product.oldPrice }}/>
           </div>
           <div className="flex items-center gap-2">
             <a href={`/admin?editar=${product.id}`} className="btn border border-[#dedbd2] !min-h-9 flex-1 text-xs">Editar</a>
@@ -86,7 +94,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
             <td className="p-3 whitespace-nowrap">{product.active ? "Ativa" : "Inativa"}</td>
             <td className="p-3">
               <div className="flex flex-wrap justify-end gap-2">
-                <WhatsAppOfferCopy product={{ id: product.id, title: product.title, store: product.store, price: product.price, oldPrice: product.oldPrice, affiliateUrl: product.affiliateUrl }}/>
+                <WhatsAppOfferCopy product={{ id: product.id, title: product.title, store: product.store, price: product.price, oldPrice: product.oldPrice }}/>
                 <a href={`/admin?editar=${product.id}`} className="btn border border-[#dedbd2] !min-h-9 px-3 py-1">Editar</a>
                 <form action={toggleProduct}>
                   <input type="hidden" name="id" value={product.id}/>

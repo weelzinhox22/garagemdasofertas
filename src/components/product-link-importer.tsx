@@ -40,7 +40,7 @@ export function ProductLinkImporter({ categories }: { categories: Category[] }) 
 
       <label className="grid gap-1 text-sm font-bold">
         Slug
-        <input className="field" name="slug" required pattern="[a-z0-9-]+" defaultValue={state.draft.slug}/>
+        <input className="field" name="slug" required pattern="^[a-z0-9]+(?:-[a-z0-9]+)*$" defaultValue={state.draft.slug}/>
       </label>
 
       <label className="grid gap-1 text-sm font-bold">

@@ -9,7 +9,6 @@ type ShareProduct = {
   store: string;
   price: number | null;
   oldPrice: number | null;
-  affiliateUrl?: string | null;
 };
 
 function currency(value: number) {
@@ -23,11 +22,9 @@ function offerText(product: ShareProduct, origin: string) {
     ? Math.round(((oldPrice - price) / oldPrice) * 100)
     : null;
 
-  // Leva direto para a loja / link de afiliado do produto se cadastrado; se não tiver, usa /go/:id
-  const directUrl = product.affiliateUrl?.trim();
-  const offerLink = directUrl && directUrl.startsWith("http")
-    ? directUrl
-    : new URL(`/go/${product.id}`, origin).toString();
+  const offerUrl = new URL(`/go/${product.id}`, origin);
+  offerUrl.searchParams.set("utm_source", "other");
+  offerUrl.searchParams.set("utm_campaign", "whatsapp_group");
 
   return [
     "🚨 *OFERTA ENCONTRADA!*",
@@ -40,7 +37,7 @@ function offerText(product: ShareProduct, origin: string) {
     discount !== null ? `💥 *${discount}% OFF*` : "",
     "",
     "👉 *PEGUE A OFERTA:*",
-    offerLink,
+    offerUrl.toString(),
     "",
     "⚡ O preço pode mudar a qualquer momento.",
     "🧡 Garagem das Ofertas"
@@ -81,34 +78,17 @@ export function WhatsAppOfferCopy({ product }: { product: ShareProduct }) {
     timer.current = setTimeout(() => setStatus("idle"), 2_500);
   }
 
-  function handleShareDirect() {
-    const text = encodeURIComponent(offerText(product, window.location.origin));
-    window.open(`https://api.whatsapp.com/send?text=${text}`, "_blank", "noopener,noreferrer");
-  }
-
   const Icon = status === "copied" ? Check : status === "error" ? TriangleAlert : MessageCircle;
-  const label = status === "copied" ? "Copiado!" : status === "error" ? "Erro" : "Copiar";
+  const label = status === "copied" ? "Oferta copiada" : status === "error" ? "Tente novamente" : "Copiar para WhatsApp";
 
-  return (
-    <div className="inline-flex items-center gap-1.5">
-      <button
-        type="button"
-        onClick={handleCopy}
-        className="btn !min-h-9 whitespace-nowrap bg-[#147a3d] px-3 py-1 text-white shadow-[0_7px_18px_rgba(20,122,61,.2)] hover:bg-[#106432]"
-        title="Copiar mensagem formatada para WhatsApp"
-        aria-live="polite"
-      >
-        <Icon size={16} aria-hidden="true"/>
-        {label}
-      </button>
-      <button
-        type="button"
-        onClick={handleShareDirect}
-        className="btn !min-h-9 whitespace-nowrap border border-[#147a3d] bg-white px-2.5 py-1 text-[#147a3d] hover:bg-[#f0f9f3]"
-        title="Abrir diretamente no WhatsApp"
-      >
-        Enviar
-      </button>
-    </div>
-  );
+  return <button
+    type="button"
+    onClick={handleCopy}
+    className="btn !min-h-9 w-full whitespace-nowrap bg-[#147a3d] px-3 py-1 text-white shadow-[0_7px_18px_rgba(20,122,61,.2)] hover:bg-[#106432] sm:w-auto"
+    title="Copiar mensagem formatada para WhatsApp"
+    aria-live="polite"
+  >
+    <Icon size={16} aria-hidden="true"/>
+    {label}
+  </button>;
 }

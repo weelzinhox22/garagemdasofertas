@@ -16,17 +16,27 @@ export function CommunityModal() {
   const telegram = isSafeCommunityUrl(siteConfig.community.telegram, "telegram");
 
   const close = useCallback((joined = false) => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ until: Date.now() + (joined ? 30 : 7) * DAY, joined }));
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ until: Date.now() + (joined ? 180 : 30) * DAY, joined }));
+    } catch { /* O fechamento continua funcionando quando o navegador bloqueia storage. */ }
     setOpen(false);
+    window.dispatchEvent(new Event("community-prompt-dismissed"));
     requestAnimationFrame(() => previousFocus.current?.focus());
   }, []);
 
   useEffect(() => {
     const onOpen = () => { previousFocus.current = document.activeElement as HTMLElement; setOpen(true); };
     window.addEventListener("open-community", onOpen);
-    // Abre automaticamente assim que o site carrega
-    requestAnimationFrame(onOpen);
-    return () => window.removeEventListener("open-community", onOpen);
+    let shouldOpen = true;
+    try {
+      const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null") as { until?: number } | null;
+      shouldOpen = !saved?.until || saved.until <= Date.now();
+    } catch { /* Um valor antigo invalido nao deve bloquear o convite. */ }
+    const timer = shouldOpen ? window.setTimeout(onOpen, 4_500) : null;
+    return () => {
+      window.removeEventListener("open-community", onOpen);
+      if (timer) window.clearTimeout(timer);
+    };
   }, []);
 
   useEffect(() => {
