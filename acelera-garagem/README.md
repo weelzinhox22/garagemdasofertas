@@ -62,4 +62,6 @@ npm install
 npm run dev
 ```
 
-A Vercel chama `/api/cron/dispatch` a cada hora. Em outro provedor, agende uma requisicao GET com `Authorization: Bearer <CRON_SECRET>`.
+No plano Hobby, a Vercel chama `/api/cron/dispatch` uma vez por dia como contingencia. Para buscar e enviar ofertas de hora em hora sem contratar o plano Pro, execute `supabase/hourly-cron.sql` no SQL Editor depois do primeiro deploy. Substitua os dois placeholders pelo dominio de producao e pelo mesmo `CRON_SECRET` configurado na Vercel; nunca salve o arquivo preenchido no Git.
+
+O Supabase Cron executa a rota aos 5 minutos de cada hora. Acompanhe as execucoes em **Integrations -> Cron** no painel do Supabase. Em outro provedor, agende uma requisicao GET para `/api/cron/dispatch` com `Authorization: Bearer <CRON_SECRET>`.
