@@ -8,7 +8,7 @@ O projeto reproduz o fluxo funcional de ferramentas de automacao de afiliados, m
 
 1. Crie um segundo projeto na Vercel usando o mesmo repositorio.
 2. Em **Root Directory**, selecione `acelera-garagem`.
-3. No Supabase, abra o SQL Editor e execute `supabase/setup.sql`.
+3. No Supabase, abra o SQL Editor e execute `supabase/setup.sql` e depois `supabase/mercadolivre-search.sql`.
 4. Cadastre as variaveis de `.env.example` no ambiente de producao.
 5. Gere valores longos e diferentes para `AUTOMATION_ADMIN_TOKEN` e `CRON_SECRET`.
 6. Faça o deploy e abra `/painel` com o token de administracao.
@@ -38,6 +38,14 @@ Somente dominios presentes em `OFFER_FEED_ALLOWED_HOSTS` podem ser consultados. 
 A imagem pode vir de qualquer CDN publica em HTTPS. A origem da imagem nao altera a loja escolhida: e possivel usar uma imagem hospedada pela Shopee e manter a oferta identificada como TikTok Shop.
 
 Para realmente buscar ofertas de marketplaces, conecte um feed ou API para a qual voce tenha autorizacao e credenciais de afiliado. O sistema nao raspa paginas nem inventa ofertas.
+
+## Busca automatica no Mercado Livre
+
+Configure `MERCADOLIVRE_CLIENT_ID`, `MERCADOLIVRE_CLIENT_SECRET`, `MERCADOLIVRE_ACCESS_TOKEN` e `MERCADOLIVRE_REFRESH_TOKEN` na Vercel. O sistema consulta o catalogo oficial por palavra-chave, guarda o novo refresh token a cada renovacao e evita reenviar o mesmo item no mesmo preco.
+
+Depois, abra `/painel`, cadastre uma busca, defina o desconto minimo e clique em **Executar agora**. O Supabase Cron repetira as buscas de hora em hora.
+
+Se a Central de Afiliados tiver fornecido um formato oficial para gerar links, configure `MERCADOLIVRE_AFFILIATE_TEMPLATE` usando os placeholders `{url}`, `{encoded_url}` e `{affiliate_id}`. Sem esse modelo, a automacao usa o link comum do produto e nao pode garantir atribuicao de comissao.
 
 ## Telegram
 
