@@ -24,7 +24,10 @@ export function Dashboard() {
 
   const request = useCallback(async (path: string, init?: RequestInit) => {
     const response = await fetch(path, { ...init, headers: { authorization: `Bearer ${token}`, "content-type": "application/json", ...(init?.headers || {}) } });
-    const data = await response.json();
+    const raw = await response.text();
+    let data: Record<string, any> = {};
+    try { data = raw ? JSON.parse(raw) : {}; }
+    catch { throw new Error(`O servidor respondeu em formato invalido (${response.status}). Verifique o deploy e as variaveis da Vercel.`); }
     if (!response.ok) throw new Error(data.error || "Falha na operacao");
     return data;
   }, [token]);
@@ -32,7 +35,7 @@ export function Dashboard() {
   const refresh = useCallback(async () => {
     if (!token) return;
     setLoading(true);
-    try { setState(await request("/api/state")); setMessage(""); }
+    try { setState(await request("/api/state") as State); setMessage(""); }
     catch (error) { setMessage(error instanceof Error ? error.message : "Falha ao carregar"); }
     finally { setLoading(false); }
   }, [request, token]);
