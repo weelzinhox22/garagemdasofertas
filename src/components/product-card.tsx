@@ -1,8 +1,8 @@
-import Image from "next/image";
 import Link from "next/link";
 import { ArrowUpRight, Tag } from "lucide-react";
 import type { Product } from "@/types";
 import { platformByName } from "@/lib/platforms";
+import { ProductImage } from "@/components/product-image";
 
 const currency = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
 
@@ -13,7 +13,7 @@ export function ProductCard({ product }: { product: Product }) {
   return (
     <article className="product-card group relative flex min-w-0 flex-col overflow-hidden rounded-2xl border border-[var(--line)] bg-[var(--surface)]">
       <Link href={`/produto/${product.slug}`} className="product-media relative aspect-square overflow-hidden bg-[var(--soft)]">
-        <Image src={product.imageUrl} alt={product.title} fill sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw" className="product-image object-cover"/>
+        <ProductImage src={product.imageUrl} alt={product.title} categorySlug={product.categorySlug} className="product-image object-cover"/>
         <span className="product-sheen absolute inset-0" aria-hidden="true"/>
         {(product.featured || discount) && <span className="absolute left-2.5 top-2.5 rounded-full border border-white/15 bg-[#181713]/90 px-2.5 py-1 text-[9px] font-black uppercase tracking-wider text-white backdrop-blur-sm">{discount ? `-${discount}%` : "Destaque"}</span>}
         {product.demo && <span className="absolute bottom-2.5 left-2.5 rounded-full bg-white/90 px-2.5 py-1 text-[9px] font-black uppercase tracking-wider text-[#57534c] backdrop-blur-sm">Demonstração</span>}
