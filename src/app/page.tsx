@@ -1,38 +1,244 @@
+import Image from "next/image";
 import Link from "next/link";
-import { ArrowRight, CheckCircle2, MessageCircle, MoveUpRight, Sparkles, TicketPercent } from "lucide-react";
+import type { CSSProperties } from "react";
+import {
+  ArrowRight,
+  ArrowUpRight,
+  BadgePercent,
+  CheckCircle2,
+  MessageCircle,
+  Search,
+  Send,
+  ShieldCheck,
+  Sparkles,
+  Store,
+  Zap,
+} from "lucide-react";
 import { CategoryIcon } from "@/components/category-icon";
-import { CommunityBanner } from "@/components/community-banner";
 import { ProductGrid } from "@/components/product-grid";
-import { SearchForm } from "@/components/search-form";
 import { getCategories, getProducts } from "@/lib/data";
 import { platforms } from "@/lib/platforms";
+import { isSafeCommunityUrl, siteConfig } from "@/lib/site-config";
+import styles from "./home.module.css";
 
 export default async function Home() {
   const [products, categories] = await Promise.all([getProducts(), getCategories()]);
-  const featured = products.filter((p) => p.featured).slice(0, 8);
+  const featured = products.filter((product) => product.featured).slice(0, 8);
   const catalog = featured.length ? featured : products.slice(0, 8);
-  return <>
-    <section className="hero-neon relative isolate overflow-hidden border-b border-orange-900 bg-[#0b0907] text-white">
-      <div className="hero-image absolute inset-0 -z-20 bg-cover bg-[72%_center] opacity-65 md:bg-center" style={{ backgroundImage: "url('/brand/hero-garagem-neon.png')" }}/>
-      <div className="absolute inset-0 -z-10 bg-[linear-gradient(90deg,rgba(8,6,4,.98)_0%,rgba(8,6,4,.88)_44%,rgba(8,6,4,.2)_78%,rgba(8,6,4,.12)_100%)]"/>
-      <div className="container-site grid min-h-[540px] items-center py-12 sm:min-h-[580px] lg:grid-cols-[.8fr_1fr] lg:py-16">
-        <div className="max-w-2xl" data-reveal><p className="hero-pill inline-flex items-center gap-2 rounded-full border border-orange-400/40 bg-orange-500/10 px-3 py-1.5 text-xs font-black uppercase tracking-[.12em] text-orange-300"><TicketPercent size={15}/>Economize antes de comprar</p><h1 className="hero-title mt-6 text-[clamp(2.8rem,7vw,5.6rem)] font-black leading-[.88] tracking-[-.07em]">Achadinhos<br/><span className="text-orange-400">que valem</span><br/>o clique.</h1><p className="mt-6 max-w-lg text-base leading-7 text-white/72 sm:text-lg">Garimpamos oportunidades no Mercado Livre, na Shopee e no TikTok Shop — e os melhores cupons chegam primeiro nos grupos.</p><div className="mt-8 flex flex-col gap-3 sm:flex-row"><Link href="/comunidade" className="btn cta-glow bg-[#159447] text-white"><MessageCircle size={19}/>Entrar nos grupos grátis</Link><Link href="#ofertas" className="btn border border-white/30 bg-black/25 text-white backdrop-blur-sm">Explorar achadinhos <ArrowRight size={18}/></Link></div><div className="mt-7 flex flex-wrap gap-x-5 gap-y-2 text-xs font-bold text-white/65"><span className="flex items-center gap-1.5"><CheckCircle2 size={15} className="text-orange-400"/>Entrada gratuita</span><span className="flex items-center gap-1.5"><CheckCircle2 size={15} className="text-orange-400"/>Saia quando quiser</span><span className="flex items-center gap-1.5"><CheckCircle2 size={15} className="text-orange-400"/>Sem pedir telefone</span></div></div>
-      </div>
-      <div className="absolute bottom-5 right-5 hidden items-center gap-2 text-[10px] font-black uppercase tracking-[.18em] text-white/45 lg:flex"><span className="h-px w-12 bg-orange-400/60"/>Role para descobrir</div>
-    </section>
+  const whatsapp = isSafeCommunityUrl(siteConfig.community.whatsapp, "whatsapp");
+  const telegram = isSafeCommunityUrl(siteConfig.community.telegram, "telegram");
 
-    <div className="ticker-shell overflow-hidden border-y border-orange-500/25 bg-[#17110c] py-3 text-white" aria-label="Plataformas disponíveis"><div className="ticker-track flex min-w-max items-center gap-7 text-xs font-black uppercase tracking-[.18em]"><span>Achadinhos no Mercado Livre</span><Sparkles size={15} className="text-orange-400"/><span>Achadinhos na Shopee</span><Sparkles size={15} className="text-orange-400"/><span>Achadinhos no TikTok Shop</span><Sparkles size={15} className="text-orange-400"/><span aria-hidden="true">Achadinhos no Mercado Livre</span><Sparkles size={15} className="text-orange-400" aria-hidden="true"/><span aria-hidden="true">Achadinhos na Shopee</span><Sparkles size={15} className="text-orange-400" aria-hidden="true"/><span aria-hidden="true">Achadinhos no TikTok Shop</span></div></div>
+  const primaryChannels = [
+    {
+      label: "Grupo principal no WhatsApp",
+      description: "Cupons e ofertas direto no celular",
+      eyebrow: "Mais rápido",
+      href: whatsapp ? siteConfig.community.whatsapp : "/comunidade",
+      external: whatsapp,
+      icon: MessageCircle,
+      tone: "whatsapp",
+    },
+    {
+      label: "Canal de ofertas no Telegram",
+      description: "Acompanhe sem lotar suas conversas",
+      eyebrow: "Canal gratuito",
+      href: telegram ? siteConfig.community.telegram : "/comunidade",
+      external: telegram,
+      icon: Send,
+      tone: "telegram",
+    },
+    {
+      label: "Ver todos os achadinhos",
+      description: "Compare as ofertas publicadas no site",
+      eyebrow: "Catálogo completo",
+      href: "/ofertas",
+      external: false,
+      icon: BadgePercent,
+      tone: "orange",
+    },
+    {
+      label: "Buscar um produto",
+      description: "Encontre por nome, categoria ou loja",
+      eyebrow: "Busca rápida",
+      href: "/buscar",
+      external: false,
+      icon: Search,
+      tone: "neutral",
+    },
+  ] as const;
 
-    <section className="container-site relative z-10 py-5" data-reveal><div className="search-dock theme-surface grid gap-4 rounded-2xl border border-[var(--line)] p-4 shadow-[0_18px_50px_var(--shadow)] md:grid-cols-[1fr_auto] md:items-center md:p-5"><div><p className="text-sm font-black">Já sabe o que procura?</p><p className="mt-1 text-xs text-muted">Busque no catálogo ou navegue pelas vitrines de cada plataforma.</p></div><div className="w-full md:w-[420px]"><SearchForm compact/></div></div></section>
+  return (
+    <div className={styles.page}>
+      <section className={styles.hero}>
+        <div className={styles.heroGlow} aria-hidden="true" />
+        <div className={styles.heroGrid} aria-hidden="true" />
+        <div className={`${styles.heroInner} container-site`}>
+          <div className={styles.brandStage} data-reveal>
+            <div className={styles.logoOrbit}>
+              <span className={styles.orbitRing} aria-hidden="true" />
+              <Image
+                src="/brand/logo-neon.png"
+                alt="Garagem das Ofertas"
+                width={168}
+                height={168}
+                priority
+                className={styles.heroLogo}
+              />
+              <span className={styles.liveBadge}><span />OFERTAS NO AR</span>
+            </div>
+            <div className={styles.heroCopy}>
+              <p className={styles.kicker}><Sparkles size={15} /> Sua central de economia</p>
+              <h1>Achadinhos bons<br /><span>não ficam parados.</span></h1>
+              <p>Entre nos grupos, explore as vitrines e encontre produtos mais baratos no Mercado Livre, na Shopee e no TikTok Shop.</p>
+              <div className={styles.trustRow}>
+                <span><CheckCircle2 size={16} /> Grátis</span>
+                <span><ShieldCheck size={16} /> Links verificados</span>
+                <span><Zap size={16} /> Atualizações rápidas</span>
+              </div>
+            </div>
+          </div>
 
-    <section className="container-site py-10 sm:py-14" data-reveal><div className="mb-5 flex items-end justify-between"><div><p className="eyebrow">Explore seu interesse</p><h2 className="section-title">Categorias</h2></div><Link href="/ofertas" className="link-arrow text-sm font-bold text-[var(--accent-strong)]">Ver todas <ArrowRight size={15}/></Link></div>
-      <div className="category-rail grid grid-cols-4 gap-2 md:grid-cols-8">{categories.map((category) => <Link key={category.id} href={`/categoria/${category.slug}`} className="category-tile group flex min-h-24 flex-col items-center justify-center gap-2 rounded-xl border border-[var(--line)] bg-[var(--surface)] p-2 text-center text-[11px] font-extrabold leading-tight sm:text-xs"><span className="category-icon grid h-10 w-10 place-items-center rounded-lg bg-[var(--soft)] text-[var(--accent-strong)]"><CategoryIcon name={category.icon}/></span>{category.name}</Link>)}<Link href="/ofertas" className="category-tile group flex min-h-24 flex-col items-center justify-center gap-2 rounded-xl border border-orange-600 bg-[#17120e] p-2 text-center text-[11px] font-extrabold leading-tight text-white sm:text-xs"><span className="category-icon grid h-10 w-10 place-items-center rounded-lg bg-white/10 text-[#f2b928]"><CategoryIcon name="tags"/></span>Todas</Link></div>
-    </section>
+          <div className={styles.quickPanel} data-reveal>
+            <div className={styles.panelHeading}>
+              <div>
+                <p>Comece por aqui</p>
+                <h2>Onde você quer economizar?</h2>
+              </div>
+              <span className={styles.panelNumber}>01</span>
+            </div>
+            <div className={styles.compactActions}>
+              <a
+                href={whatsapp ? siteConfig.community.whatsapp : "/comunidade"}
+                target={whatsapp ? "_blank" : undefined}
+                rel={whatsapp ? "noopener noreferrer" : undefined}
+                className={`${styles.compactAction} ${styles.whatsappAction}`}
+              >
+                <MessageCircle size={22} />
+                <span><strong>Entrar no WhatsApp</strong><small>Receber ofertas primeiro</small></span>
+                <ArrowUpRight size={19} />
+              </a>
+              <Link href="/ofertas" className={styles.compactAction}>
+                <Store size={22} />
+                <span><strong>Explorar ofertas</strong><small>Ver o catálogo completo</small></span>
+                <ArrowRight size={19} />
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
 
-    <section className="container-site pb-10 sm:pb-16" data-reveal><div className="mb-5"><p className="eyebrow">Três vitrines, uma curadoria</p><h2 className="section-title">Onde você prefere encontrar?</h2></div><div className="grid gap-3 md:grid-cols-3">{platforms.map((platform, index) => <Link key={platform.slug} href={`/loja/${platform.slug}`} className="platform-card group relative min-h-52 overflow-hidden rounded-2xl border border-[var(--line)] bg-[var(--surface)] p-5 sm:p-6"><span className="absolute inset-x-0 top-0 h-1.5" style={{ background: platform.color }}/><span className="absolute -right-3 -top-8 text-[7rem] font-black leading-none opacity-[.035]">0{index + 1}</span><div className="relative flex h-full flex-col"><div className="flex items-center justify-between"><span className="rounded-full border border-[var(--line)] px-2.5 py-1 text-[10px] font-black uppercase tracking-[.13em]">Vitrine 0{index + 1}</span><MoveUpRight className="platform-arrow" size={22}/></div><div className="mt-auto pt-10"><p className="text-2xl font-black tracking-[-.045em]">Achadinhos {platform.preposition}<br/>{platform.label}</p><p className="mt-2 max-w-xs text-xs leading-5 text-muted">{platform.description}</p></div></div></Link>)}</div></section>
+      <section className={`${styles.hubSection} container-site`} data-reveal>
+        <div className={styles.sectionIntro}>
+          <span className={styles.step}>02</span>
+          <div>
+            <p className={styles.eyebrow}>Escolha seu canal</p>
+            <h2>Ofertas do seu jeito</h2>
+            <p>Um toque e você já está dentro. Sem cadastro, sem mensalidade.</p>
+          </div>
+        </div>
 
-    <section id="ofertas" className="container-site scroll-mt-24 py-8 sm:py-12" data-reveal><div className="mb-6 flex items-end justify-between"><div><p className="eyebrow">Seleção da garagem</p><h2 className="section-title">Achadinhos em destaque</h2></div><Link href="/ofertas" className="link-arrow hidden text-sm font-bold text-[var(--accent-strong)] sm:flex">Ver catálogo <ArrowRight size={16}/></Link></div><ProductGrid products={catalog}/></section>
-    <CommunityBanner/>
-    {platforms.map((platform) => { const items = products.filter((p) => p.store === platform.name).slice(0, 4); return items.length ? <section key={platform.slug} className="container-site py-8 sm:py-12" data-reveal><div className="mb-5 flex items-end justify-between"><div><p className="text-xs font-black uppercase tracking-[.12em]" style={{ color: platform.ink }}>{platform.label}</p><h2 className="section-title">Achadinhos {platform.preposition} {platform.label}</h2></div><Link href={`/loja/${platform.slug}`} className="link-arrow text-sm font-bold text-[var(--accent-strong)]">Ver vitrine <ArrowRight size={15}/></Link></div><ProductGrid products={items}/></section> : null; })}
-  </>;
+        <div className={styles.channelGrid}>
+          {primaryChannels.map((channel) => {
+            const Icon = channel.icon;
+            const content = (
+              <>
+                <span className={`${styles.channelIcon} ${styles[channel.tone]}`}><Icon size={25} /></span>
+                <span className={styles.channelText}>
+                  <small>{channel.eyebrow}</small>
+                  <strong>{channel.label}</strong>
+                  <span>{channel.description}</span>
+                </span>
+                <span className={styles.channelArrow}><ArrowUpRight size={21} /></span>
+              </>
+            );
+
+            return channel.external ? (
+              <a key={channel.label} href={channel.href} target="_blank" rel="noopener noreferrer" className={styles.channelCard}>{content}</a>
+            ) : (
+              <Link key={channel.label} href={channel.href} className={styles.channelCard}>{content}</Link>
+            );
+          })}
+        </div>
+      </section>
+
+      <section className={`${styles.categorySection} container-site`} data-reveal>
+        <div className={styles.sectionIntro}>
+          <span className={styles.step}>03</span>
+          <div>
+            <p className={styles.eyebrow}>Navegue por categoria</p>
+            <h2>Encontre o que você gosta</h2>
+            <p>Atalhos grandes, rápidos e fáceis de usar no celular.</p>
+          </div>
+        </div>
+
+        <div className={styles.categoryGrid}>
+          {categories.map((category, index) => (
+            <Link key={category.id} href={`/categoria/${category.slug}`} className={styles.categoryCard}>
+              <span className={styles.categoryIndex}>{String(index + 1).padStart(2, "0")}</span>
+              <span className={styles.categoryIcon}><CategoryIcon name={category.icon} size={26} /></span>
+              <span className={styles.categoryCopy}>
+                <strong>{category.name}</strong>
+                <small>{category.description}</small>
+              </span>
+              <ArrowRight className={styles.categoryArrow} size={21} />
+            </Link>
+          ))}
+          <Link href="/ofertas" className={`${styles.categoryCard} ${styles.allCategories}`}>
+            <span className={styles.categoryIndex}>+</span>
+            <span className={styles.categoryIcon}><BadgePercent size={26} /></span>
+            <span className={styles.categoryCopy}><strong>Todas as ofertas</strong><small>Veja a seleção completa da garagem.</small></span>
+            <ArrowRight className={styles.categoryArrow} size={21} />
+          </Link>
+        </div>
+      </section>
+
+      <section className={`${styles.storeSection} container-site`} data-reveal>
+        <div className={styles.sectionIntro}>
+          <span className={styles.step}>04</span>
+          <div>
+            <p className={styles.eyebrow}>Escolha a plataforma</p>
+            <h2>Três vitrines, uma curadoria</h2>
+            <p>Acesse diretamente os achadinhos de cada marketplace.</p>
+          </div>
+        </div>
+        <div className={styles.storeGrid}>
+          {platforms.map((platform, index) => (
+            <Link key={platform.slug} href={`/loja/${platform.slug}`} className={styles.storeCard} style={{ "--store-color": platform.color } as CSSProperties}>
+              <span className={styles.storeTop}><span>VITRINE {String(index + 1).padStart(2, "0")}</span><ArrowUpRight size={20} /></span>
+              <strong>Achadinhos {platform.preposition}<br />{platform.label}</strong>
+              <small>{platform.description}</small>
+              <span className={styles.storeBar} />
+            </Link>
+          ))}
+        </div>
+      </section>
+
+      <section className={`${styles.productsSection} container-site`} id="ofertas" data-reveal>
+        <div className={styles.productsHeading}>
+          <div>
+            <p className={styles.eyebrow}>Seleção da garagem</p>
+            <h2>Achadinhos em destaque</h2>
+          </div>
+          <Link href="/ofertas">Ver catálogo <ArrowRight size={17} /></Link>
+        </div>
+        <ProductGrid products={catalog} />
+      </section>
+
+      <section className={`${styles.finalCta} container-site`} data-reveal>
+        <div>
+          <p><Sparkles size={15} /> Não perca a próxima queda de preço</p>
+          <h2>A oferta certa pode durar poucos minutos.</h2>
+          <span>Entre gratuitamente e receba os melhores achadinhos no WhatsApp.</span>
+        </div>
+        <a
+          href={whatsapp ? siteConfig.community.whatsapp : "/comunidade"}
+          target={whatsapp ? "_blank" : undefined}
+          rel={whatsapp ? "noopener noreferrer" : undefined}
+          className={styles.finalButton}
+        >
+          <MessageCircle size={21} /> Entrar no grupo <ArrowUpRight size={18} />
+        </a>
+      </section>
+    </div>
+  );
 }
